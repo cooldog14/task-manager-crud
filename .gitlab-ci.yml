@@ -63,6 +63,26 @@ unit_tests:
     - develop
     - merge_requests
 
+bdd_tests:
+  stage: test
+  image: node:${NODE_VERSION}
+  dependencies:
+    - build
+  before_script:
+    - npm ci --cache .npm --prefer-offline
+  script:
+    - echo "Running BDD Tests..."
+    - npm run test:bdd
+  artifacts:
+    paths:
+      - bdd-results/
+    expire_in: 1 week
+  allow_failure: false # CRITICAL: Pipeline blocks if BDD tests fail
+  only:
+    - main
+    - develop
+    - merge_requests
+
 # UI Tests
 ui_tests:
   stage: test
@@ -84,7 +104,7 @@ ui_tests:
     paths:
       - test-results/
     expire_in: 1 week
-  allow_failure: true  # UI tests can be flaky
+  allow_failure: false  # UI tests must pass for pipeline to succeed
   only:
     - main
     - develop

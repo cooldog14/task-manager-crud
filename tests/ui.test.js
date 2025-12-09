@@ -206,4 +206,76 @@ describe('Task Manager UI Tests', () => {
       expect(taskItems.length).toBeGreaterThan(0);
     }, 15000);
   });
+
+  describe('Advanced Filtering Functionality', () => {
+    test('should filter tasks using advanced filter criteria', async () => {
+      // Helper to add tasks for filtering scenarios
+      const addTask = async (title, priority, dueDate) => {
+        const addTaskBtn = await driver.findElement(By.id('addTaskBtn'));
+        await addTaskBtn.click();
+        await driver.wait(until.elementLocated(By.id('taskModal')), 5000); // Wait for modal to appear
+        await driver.wait(until.elementLocated(By.id('taskForm')), 5000);
+
+        await driver.findElement(By.id('taskTitle')).sendKeys(title);
+        await driver.findElement(By.id('taskPriority')).sendKeys(priority);
+        
+        // Assuming there's an input for dueDate in the form with id='taskDueDate'
+        if (dueDate) {
+          try {
+            const dueDateInput = await driver.findElement(By.id('taskDueDate'));
+            await dueDateInput.sendKeys(dueDate);
+          } catch (error) {
+            console.warn("taskDueDate input not found in modal, skipping due date entry for test. Ensure it exists or adapt test.");
+          }
+        }
+        await driver.findElement(By.className('save-btn')).click();
+        await driver.wait(until.elementLocated(By.className('task-item')), 5000); // Wait for task list to update
+      };
+
+      // Helper to get today's date in YYYY-MM-DD format
+      const getTodayDate = () => {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months start at 0!
+        const dd = String(today.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+      };
+
+      await addTask('Advanced Filter - High Today', 'high', getTodayDate());
+      await addTask('Advanced Filter - Low Week', 'low', '2025-12-20'); // Example date in the future
+      await addTask('Advanced Filter - Medium Past', 'medium', '2023-01-01');
+
+      // Wait for tasks to be rendered and stable
+      await driver.sleep(1000);
+
+      // Apply advanced filters: Priority 'high' AND Date 'today'
+      const filterPriority = await driver.findElement(By.id('filter-priority'));
+      await filterPriority.sendKeys('high'); // Select 'high' priority
+
+      const filterDate = await driver.findElement(By.id('filter-date'));
+      await filterDate.sendKeys('today'); // Select 'today' due date
+
+      const applyFiltersBtn = await driver.findElement(By.id('apply-filters-btn'));
+      await applyFiltersBtn.click();
+
+      // Wait for filtering to apply and re-render
+      await driver.sleep(1500);
+
+      // Assert only the "High Priority Today Task" is visible
+      const visibleTasks = await driver.findElements(By.className('task-item'));
+      expect(visibleTasks.length).toBe(1); // Expect only one task
+
+      const taskTitle = await visibleTasks[0].findElement(By.className('task-title')).getText();
+      expect(taskTitle).toContain('Advanced Filter - High Today');
+
+      // Reset filters and check all tasks are visible again
+      const resetFiltersBtn = await driver.findElement(By.id('reset-filters-btn'));
+      await resetFiltersBtn.click();
+      await driver.sleep(1000); // Wait for reset and re-render
+
+      const allTasksAfterReset = await driver.findElements(By.className('task-item'));
+      expect(allTasksAfterReset.length).toBe(3); // All 3 tasks should be visible
+
+    }, 45000); // Increased timeout for this comprehensive test
+  });
 });

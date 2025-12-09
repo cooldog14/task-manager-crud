@@ -6,6 +6,7 @@
   "scripts": {
     "test": "jest",
     "test:unit": "jest tests/validators.test.js tests/advancedFilters.test.js tests/dateUtils.test.js tests/storage.test.js",
+    "test:bdd": "jest tests/steps/",
     "test:ui": "jest tests/ui.test.js",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",

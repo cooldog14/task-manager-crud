@@ -2,6 +2,9 @@
  * Task Manager - Handles all task-related operations
  */
 
+const { validateTask } = require('./validators');
+const { filterTasksAdvanced } = require('./advancedFilters');
+
 class TaskManager {
     constructor() {
         this.tasks = [];
@@ -114,7 +117,17 @@ class TaskManager {
 
     // Apply filters and sorting
     applyFiltersAndSort() {
-        let filtered = window.TaskManagerUtils.filterTasks(this.tasks, this.currentFilters);
+        const advancedFilters = {
+            searchTerm: this.currentFilters.search,
+            categories: this.currentFilters.categories,
+            priorities: this.currentFilters.priorities,
+            statuses: this.currentFilters.statuses,
+            overdue: this.currentFilters.overdue,
+            dueToday: this.currentFilters.today,
+            dueThisWeek: this.currentFilters.week
+            // No explicit operator set here, filterTasksAdvanced defaults to 'AND'
+        };
+        let filtered = filterTasksAdvanced(this.tasks, advancedFilters);
         this.filteredTasks = window.TaskManagerUtils.sortTasks(filtered, this.currentSort);
         this.renderTasks();
         this.updateTaskCount();
@@ -322,6 +335,16 @@ class TaskManager {
         const isEditing = form.dataset.editingId;
 
         try {
+            // --- ADD VALIDATION HERE ---
+            const validationResult = validateTask(formData);
+            if (!validationResult.isValid) {
+                validationResult.errors.forEach(error => {
+                    window.TaskManagerUtils.showToast(error, 'error');
+                });
+                return; // Stop submission if validation fails
+            }
+            // --- END VALIDATION ---
+
             let task;
 
             if (isEditing) {
