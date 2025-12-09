@@ -292,4 +292,9 @@ class TaskManagerStorage {
 const storage = new TaskManagerStorage();
 
 // Export for use in other modules
-window.TaskManagerStorage = storage;
+if (typeof window !== 'undefined') {
+  window.TaskManagerStorage = storage;
+}
+
+// Export for testing
+module.exports = storage;

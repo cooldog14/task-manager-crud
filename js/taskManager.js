@@ -445,4 +445,9 @@ class TaskManager {
 const taskManager = new TaskManager();
 
 // Export for use in other modules
-window.taskManager = taskManager;
+if (typeof window !== 'undefined') {
+  window.taskManager = taskManager;
+}
+
+// Export for testing
+module.exports = taskManager;
