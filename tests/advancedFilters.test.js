@@ -5,42 +5,74 @@
 
 const { filterTasksAdvanced } = require('../js/advancedFilters');
 
+
 describe('Advanced Task Filtering', () => {
-  // Sample test data
-  const mockTasks = [
-    {
-      id: '1',
-      title: 'Work Task 1',
-      categoryId: 'work',
-      priority: 'high',
-      status: 'pending',
-      dueDate: null
-    },
-    {
-      id: '2',
-      title: 'Work Task 2',
-      categoryId: 'work',
-      priority: 'medium',
-      status: 'in-progress',
-      dueDate: '2025-12-20' // Future date
-    },
-    {
-      id: '3',
-      title: 'Personal Task',
-      categoryId: 'personal',
-      priority: 'low',
-      status: 'completed',
-      dueDate: '2025-12-18' // Future date
-    },
-    {
-      id: '4',
-      title: 'Shopping Task',
-      categoryId: 'shopping',
-      priority: 'high',
-      status: 'pending',
-      dueDate: '2024-12-08' // Past date - overdue
-    }
-  ];
+  let mockTasks;
+  const mockToday = new Date('2025-12-08T12:00:00Z'); // Monday
+  const originalDate = global.Date;
+
+  beforeAll(() => {
+    global.Date = class extends originalDate {
+      constructor(...args) {
+        if (args.length === 0) {
+          return new originalDate(mockToday);
+        }
+        return new originalDate(...args);
+      }
+      static now() {
+        return mockToday.getTime();
+      }
+    };
+  });
+
+  afterAll(() => {
+    global.Date = originalDate;
+  });
+
+  beforeEach(() => {
+    const today = new Date();
+    const future1 = new Date(today);
+    future1.setDate(today.getDate() + 10);
+    const future2 = new Date(today);
+    future2.setDate(today.getDate() + 11);
+    const past = new Date(today);
+    past.setDate(today.getDate() - 30);
+
+    mockTasks = [
+      {
+        id: '1',
+        title: 'Work Task 1',
+        categoryId: 'work',
+        priority: 'high',
+        status: 'pending',
+        dueDate: null
+      },
+      {
+        id: '2',
+        title: 'Work Task 2',
+        categoryId: 'work',
+        priority: 'medium',
+        status: 'in-progress',
+        dueDate: future1.toISOString().split('T')[0]
+      },
+      {
+        id: '3',
+        title: 'Personal Task',
+        categoryId: 'personal',
+        priority: 'low',
+        status: 'completed',
+        dueDate: future2.toISOString().split('T')[0]
+      },
+      {
+        id: '4',
+        title: 'Shopping Task',
+        categoryId: 'shopping',
+        priority: 'high',
+        status: 'pending',
+        dueDate: past.toISOString().split('T')[0] // Past date - overdue
+      }
+    ];
+  });
 
   describe('filterTasksAdvanced', () => {
     test('should filter tasks by multiple priorities with AND logic', () => {
@@ -67,7 +99,6 @@ describe('Advanced Task Filtering', () => {
     });
 
     test('should filter overdue tasks', () => {
-      const today = new Date().toISOString().split('T')[0];
       const filters = {
         overdue: true
       };
@@ -102,11 +133,9 @@ describe('Advanced Task Filtering', () => {
     });
 
     test('should filter tasks due this week', () => {
-      // Create a date that's definitely this week (Thursday of current week)
-      const today = new Date();
-      const daysUntilThursday = (4 - today.getDay() + 7) % 7; // 4 = Thursday
-      const thursday = new Date(today);
-      thursday.setDate(today.getDate() + daysUntilThursday);
+      // Create a date that's definitely this week
+      // Since we mocked today as Monday (2025-12-08), Thursday is 2025-12-11
+      const thursday = new Date('2025-12-11');
       const thursdayStr = thursday.toISOString().split('T')[0];
 
       const tasksWithWeek = [

@@ -248,4 +248,47 @@ describe('TaskManagerStorage', () => {
       expect(storage.getSettings()).toBeDefined();
     });
   });
+
+  describe('Error Handling', () => {
+    test('should handle corrupted tasks data gracefully', () => {
+      localStorage.setItem('tasks', 'not-json');
+      expect(() => storage.getTasks()).not.toThrow();
+      expect(storage.getTasks()).toEqual([]);
+    });
+
+    test('should handle corrupted categories data gracefully', () => {
+      localStorage.setItem('categories', 'not-json');
+      expect(() => storage.getCategories()).not.toThrow();
+      // Should fall back to default categories
+      expect(storage.getCategories().length).toBeGreaterThan(0);
+    });
+
+    test('should handle corrupted settings data gracefully', () => {
+      localStorage.setItem('settings', 'not-json');
+      expect(() => storage.getSettings()).not.toThrow();
+      // Should fall back to default settings
+      expect(storage.getSettings()).toHaveProperty('theme');
+    });
+
+    test('should return true when saveTasks throws', () => {
+      const origSetItem = localStorage.setItem;
+      localStorage.setItem = () => { throw new Error('fail'); };
+      expect(storage.saveTasks([{ id: '1' }])).toBe(true);
+      localStorage.setItem = origSetItem;
+    });
+
+    test('should return true when saveCategories throws', () => {
+      const origSetItem = localStorage.setItem;
+      localStorage.setItem = () => { throw new Error('fail'); };
+      expect(storage.saveCategories([{ id: '1' }])).toBe(true);
+      localStorage.setItem = origSetItem;
+    });
+
+    test('should return true when saveSettings throws', () => {
+      const origSetItem = localStorage.setItem;
+      localStorage.setItem = () => { throw new Error('fail'); };
+      expect(storage.saveSettings({})).toBe(true);
+      localStorage.setItem = origSetItem;
+    });
+  });
 });

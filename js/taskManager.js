@@ -2,8 +2,15 @@
  * Task Manager - Handles all task-related operations
  */
 
-const { validateTask } = require('./validators');
-const { filterTasksAdvanced } = require('./advancedFilters');
+let validateTask, filterTasksAdvanced;
+
+if (typeof require !== 'undefined') {
+    validateTask = require('./validators').validateTask;
+    filterTasksAdvanced = require('./advancedFilters').filterTasksAdvanced;
+} else {
+    validateTask = window.validateTask;
+    filterTasksAdvanced = window.filterTasksAdvanced;
+}
 
 class TaskManager {
     constructor() {
@@ -25,7 +32,10 @@ class TaskManager {
 
     // Load tasks from storage
     loadTasks() {
-        this.tasks = window.TaskManagerStorage.getTasks();
+        // Defensive: ensure storage is available (tests may not set it)
+        this.tasks = (window.TaskManagerStorage && typeof window.TaskManagerStorage.getTasks === 'function')
+            ? window.TaskManagerStorage.getTasks()
+            : [];
         this.applyFiltersAndSort();
     }
 
@@ -474,3 +484,7 @@ if (typeof window !== 'undefined') {
 
 // Export for testing
 module.exports = taskManager;
+// Also export the class for isolated unit testing
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports.TaskManager = TaskManager;
+}

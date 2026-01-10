@@ -11,6 +11,10 @@ jest.mock('../js/storage.js', () => ({
   updateSetting: jest.fn()
 }));
 
+jest.mock('../js/advancedFilters.js', () => ({
+  filterTasksAdvanced: jest.fn()
+}));
+
 jest.mock('../js/utils.js', () => ({
   generateId: jest.fn(() => 'test-id-123'),
   filterTasks: jest.fn(),
@@ -48,6 +52,7 @@ global.document = {
       remove: jest.fn(),
       contains: jest.fn()
     },
+    appendChild: jest.fn(),
     addEventListener: jest.fn(),
     querySelector: jest.fn(),
     querySelectorAll: jest.fn(() => []),
@@ -74,11 +79,21 @@ describe('TaskManager', () => {
     mockStorage = require('../js/storage.js');
     mockUtils = require('../js/utils.js');
 
+    // Ensure category manager mock is available on window
+    global.window.categoryManager = require('../js/categoryManager.js');
+
+    // Ensure globals used by TaskManager are present and point to mocks
+    global.window.TaskManagerStorage = mockStorage;
+    global.window.TaskManagerUtils = mockUtils;
+
     // Mock return values
     mockStorage.getTasks.mockReturnValue([]);
     mockStorage.saveTasks.mockReturnValue(true);
     mockUtils.filterTasks.mockImplementation((tasks) => tasks);
     mockUtils.sortTasks.mockImplementation((tasks) => tasks);
+    // Advanced filters mock
+    const mockAdvanced = require('../js/advancedFilters.js');
+    mockAdvanced.filterTasksAdvanced.mockImplementation((tasks) => tasks);
 
     taskManager = require('../js/taskManager.js');
   });
@@ -88,14 +103,16 @@ describe('TaskManager', () => {
       const mockTasks = [{ id: '1', title: 'Test Task' }];
       mockStorage.getTasks.mockReturnValue(mockTasks);
 
-      const manager = new (require('../js/taskManager.js'))();
+      const ManagerClass = require('../js/taskManager.js').TaskManager;
+      const manager = new ManagerClass();
 
       expect(mockStorage.getTasks).toHaveBeenCalled();
       expect(manager.tasks).toEqual(mockTasks);
     });
 
     test('should initialize with default filters', () => {
-      const manager = new (require('../js/taskManager.js'))();
+      const ManagerClass = require('../js/taskManager.js').TaskManager;
+      const manager = new ManagerClass();
 
       expect(manager.currentFilters).toEqual({
         search: '',
@@ -113,7 +130,8 @@ describe('TaskManager', () => {
     let manager;
 
     beforeEach(() => {
-      manager = new (require('../js/taskManager.js'))();
+      const ManagerClass = require('../js/taskManager.js').TaskManager;
+      manager = new ManagerClass();
       mockStorage.getTasks.mockReturnValue([]);
     });
 
@@ -160,6 +178,12 @@ describe('TaskManager', () => {
       }).toThrow('Task not found');
     });
 
+    it('should handle error when updating non-existent task', () => {
+      const { TaskManager } = require('../js/taskManager.js');
+      const manager = new TaskManager();
+      expect(() => manager.updateTask('bad-id', {})).toThrow();
+    });
+
     test('should delete existing task', () => {
       const existingTask = { id: 'existing-id', title: 'Test' };
       manager.tasks = [existingTask];
@@ -175,6 +199,12 @@ describe('TaskManager', () => {
       expect(() => {
         manager.deleteTask('non-existent');
       }).toThrow('Task not found');
+    });
+
+    it('should handle error when deleting non-existent task', () => {
+      const { TaskManager } = require('../js/taskManager.js');
+      const manager = new TaskManager();
+      expect(() => manager.deleteTask('bad-id')).toThrow();
     });
 
     test('should toggle task status', () => {
@@ -203,16 +233,49 @@ describe('TaskManager', () => {
     let manager;
 
     beforeEach(() => {
-      manager = new (require('../js/taskManager.js'))();
+      const ManagerClass = require('../js/taskManager.js').TaskManager;
+      manager = new ManagerClass();
+
+      // Ensure DOM helpers are mocked for this block (other tests may replace document)
+      document.getElementById = jest.fn((id) => ({
+        innerHTML: '',
+        style: {},
+        textContent: '',
+        classList: { add: jest.fn(), remove: jest.fn(), contains: jest.fn() },
+        appendChild: jest.fn(),
+        addEventListener: jest.fn(),
+        querySelector: jest.fn(),
+        querySelectorAll: jest.fn(() => []),
+        getAttribute: jest.fn(),
+        setAttribute: jest.fn()
+      }));
+
+      // Ensure categoryManager is available for render calls
+      global.window.categoryManager = require('../js/categoryManager.js');
     });
 
     test('should apply filters and sorting', () => {
       const mockTasks = [{ id: '1' }, { id: '2' }];
       manager.tasks = mockTasks;
 
+      const mockAdvanced = require('../js/advancedFilters.js');
+
       manager.applyFiltersAndSort();
 
-      expect(mockUtils.filterTasks).toHaveBeenCalledWith(mockTasks, manager.currentFilters);
+      // Ensure filterTasksAdvanced was called for the provided tasks and that
+      // the advanced filter object maps the current filters correctly.
+      expect(mockAdvanced.filterTasksAdvanced).toHaveBeenCalledWith(
+        expect.arrayContaining(mockTasks),
+        expect.objectContaining({
+          searchTerm: manager.currentFilters.search,
+          categories: manager.currentFilters.categories,
+          priorities: manager.currentFilters.priorities,
+          statuses: manager.currentFilters.statuses,
+          overdue: manager.currentFilters.overdue,
+          dueToday: manager.currentFilters.today,
+          dueThisWeek: manager.currentFilters.week
+        })
+      );
       expect(mockUtils.sortTasks).toHaveBeenCalled();
     });
 
@@ -288,7 +351,10 @@ describe('TaskManager', () => {
     let manager;
 
     beforeEach(() => {
-      manager = new (require('../js/taskManager.js'))();
+      const ManagerClass = require('../js/taskManager.js').TaskManager;
+      manager = new ManagerClass();
+      // Ensure categoryManager is available during UI rendering tests
+      global.window.categoryManager = require('../js/categoryManager.js');
     });
 
     test('should render tasks', () => {

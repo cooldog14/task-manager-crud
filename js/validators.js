@@ -112,6 +112,10 @@ function validateDueDate(dueDateString) {
   };
 }
 
+if (typeof window !== 'undefined') {
+  window.validateTask = validateTask;
+}
+
 module.exports = {
   validateTask
 };

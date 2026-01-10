@@ -158,6 +158,12 @@ function isDueThisWeek(dueDate) {
   return due >= today && due <= endOfWeek;
 }
 
+if (typeof window !== 'undefined') {
+  window.filterTasksAdvanced = filterTasksAdvanced;
+  window.matchesAdvancedFilters = matchesAdvancedFilters;
+  // We can attach others if needed, but filterTasksAdvanced is the main one used by TaskManager
+}
+
 module.exports = {
   filterTasksAdvanced,
   matchesAdvancedFilters,

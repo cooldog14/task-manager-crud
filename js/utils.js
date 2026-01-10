@@ -118,167 +118,49 @@ function sortTasks(tasks, sortBy) {
 
     switch (sortBy) {
         case 'created-desc':
-            return sortedTasks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            sortedTasks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            break;
         case 'created-asc':
-            return sortedTasks.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-        case 'due-asc':
-            return sortedTasks.sort((a, b) => {
-                if (!a.dueDate && !b.dueDate) return 0;
-                if (!a.dueDate) return 1;
-                if (!b.dueDate) return -1;
-                return new Date(a.dueDate) - new Date(b.dueDate);
-            });
+            sortedTasks.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+            break;
         case 'due-desc':
-            return sortedTasks.sort((a, b) => {
-                if (!a.dueDate && !b.dueDate) return 0;
-                if (!a.dueDate) return 1;
-                if (!b.dueDate) return -1;
-                return new Date(b.dueDate) - new Date(a.dueDate);
-            });
+            sortedTasks.sort((a, b) => new Date(b.dueDate) - new Date(a.dueDate));
+            break;
+        case 'due-asc':
+            sortedTasks.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+            break;
         case 'priority-desc':
-            const priorityOrder = { high: 3, medium: 2, low: 1 };
-            return sortedTasks.sort((a, b) => priorityOrder[b.priority] - priorityOrder[a.priority]);
+            sortedTasks.sort((a, b) => {
+                const order = { high: 3, medium: 2, low: 1 };
+                return (order[b.priority] || 2) - (order[a.priority] || 2);
+            });
+            break;
         case 'priority-asc':
-            const priorityOrderAsc = { high: 3, medium: 2, low: 1 };
-            return sortedTasks.sort((a, b) => priorityOrderAsc[a.priority] - priorityOrderAsc[b.priority]);
-        case 'title-asc':
-            return sortedTasks.sort((a, b) => a.title.localeCompare(b.title));
-        case 'title-desc':
-            return sortedTasks.sort((a, b) => b.title.localeCompare(a.title));
+            sortedTasks.sort((a, b) => {
+                const order = { high: 3, medium: 2, low: 1 };
+                return (order[a.priority] || 2) - (order[b.priority] || 2);
+            });
+            break;
+        case 'status-desc':
+            sortedTasks.sort((a, b) => {
+                const order = { completed: 3, 'in-progress': 2, pending: 1 };
+                return (order[b.status] || 1) - (order[a.status] || 1);
+            });
+            break;
+        case 'status-asc':
+            sortedTasks.sort((a, b) => {
+                const order = { completed: 3, 'in-progress': 2, pending: 1 };
+                return (order[a.status] || 1) - (order[b.status] || 1);
+            });
+            break;
         default:
-            return sortedTasks;
+            break;
     }
+    return sortedTasks;
 }
 
-// Filter tasks based on criteria
-function filterTasks(tasks, filters) {
-    return tasks.filter(task => {
-        // Search filter
-        if (filters.search) {
-            const searchTerm = filters.search.toLowerCase();
-            const titleMatch = task.title.toLowerCase().includes(searchTerm);
-            const descriptionMatch = task.description.toLowerCase().includes(searchTerm);
-            if (!titleMatch && !descriptionMatch) return false;
-        }
-
-        // Category filter
-        if (filters.categories && filters.categories.length > 0) {
-            if (!filters.categories.includes(task.categoryId)) return false;
-        }
-
-        // Priority filter
-        if (filters.priorities && filters.priorities.length > 0) {
-            if (!filters.priorities.includes(task.priority)) return false;
-        }
-
-        // Status filter
-        if (filters.statuses && filters.statuses.length > 0) {
-            if (!filters.statuses.includes(task.status)) return false;
-        }
-
-        // Due date filters
-        if (filters.overdue && !isOverdue(task.dueDate)) return false;
-        if (filters.today) {
-            const today = new Date().toDateString();
-            const dueDate = task.dueDate ? new Date(task.dueDate).toDateString() : null;
-            if (dueDate !== today) return false;
-        }
-        if (filters.week) {
-            if (!task.dueDate) return false;
-            const today = new Date();
-            const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-            const dueDate = new Date(task.dueDate);
-            if (dueDate < today || dueDate > weekFromNow) return false;
-        }
-
-        return true;
-    });
-}
-
-// Show toast notification
-function showToast(message, type = 'success', duration = 3000) {
-    const toastContainer = document.getElementById('toastContainer');
-    if (!toastContainer) return;
-
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `
-        <span>${message}</span>
-        <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
-    `;
-
-    toastContainer.appendChild(toast);
-
-    // Auto remove after duration
-    setTimeout(() => {
-        if (toast.parentElement) {
-            toast.remove();
-        }
-    }, duration);
-}
-
-// Confirm dialog
-function confirmDialog(message) {
-    return new Promise((resolve) => {
-        const result = confirm(message);
-        resolve(result);
-    });
-}
-
-// Get form data as object
-function getFormData(form) {
-    const formData = new FormData(form);
-    const data = {};
-    for (let [key, value] of formData.entries()) {
-        data[key] = value;
-    }
-    return data;
-}
-
-// Set form data from object
-function setFormData(form, data) {
-    for (let key in data) {
-        const element = form.elements[key];
-        if (element) {
-            element.value = data[key];
-        }
-    }
-}
-
-// Clear form
-function clearForm(form) {
-    form.reset();
-}
-
-// Validate form
-function validateForm(form) {
-    const requiredFields = form.querySelectorAll('[required]');
-    let isValid = true;
-
-    requiredFields.forEach(field => {
-        if (!field.value.trim()) {
-            field.classList.add('error');
-            isValid = false;
-        } else {
-            field.classList.remove('error');
-        }
-    });
-
-    return isValid;
-}
-
-// Add CSS class for error styling
-const style = document.createElement('style');
-style.textContent = `
-    .error {
-        border-color: #dc3545 !important;
-        box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1) !important;
-    }
-`;
-document.head.appendChild(style);
-
-// Export functions for use in other modules
-window.TaskManagerUtils = {
+// Export for window/global
+const exported = {
     generateId,
     formatDate,
     isOverdue,
@@ -291,12 +173,16 @@ window.TaskManagerUtils = {
     priorityToText,
     isValidEmail,
     debounce,
-    sortTasks,
-    filterTasks,
-    showToast,
-    confirmDialog,
-    getFormData,
-    setFormData,
-    clearForm,
-    validateForm
+    sortTasks
 };
+
+// Export for browser (window) as TaskManagerUtils for compatibility
+if (typeof window !== 'undefined') {
+    window.TaskManagerUtils = exported;
+    window.utils = exported; // for backward compatibility if needed
+}
+
+// Export for Node.js (tests)
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = exported;
+}

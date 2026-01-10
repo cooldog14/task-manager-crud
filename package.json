@@ -21,6 +21,13 @@
   },
   "jest": {
     "testEnvironment": "jsdom",
+    "moduleNameMapper": {
+      "^uuid$": "<rootDir>/node_modules/uuid/dist/index.js"
+    },
+    "transformIgnorePatterns": [
+      "/node_modules/(?!(uuid|jest-cucumber)/)"
+    ],
+    "setupFiles": ["<rootDir>/tests/jest.setup.js"],
     "collectCoverageFrom": [
       "js/**/*.js",
       "!js/app.js"
