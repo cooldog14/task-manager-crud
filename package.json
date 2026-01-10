@@ -21,9 +21,19 @@
   },
   "jest": {
     "testEnvironment": "jsdom",
+    "moduleNameMapper": {
+      "^uuid$": "uuid"
+    },
+    "transformIgnorePatterns": [
+      "/node_modules/(?!(uuid|jest-cucumber)/)"
+    ],
     "collectCoverageFrom": [
       "js/**/*.js",
       "!js/app.js"
+    ],
+    "testMatch": [
+      "**/tests/**/*.test.js",
+      "**/tests/**/*.steps.js"
     ],
     "coverageThreshold": {
       "global": {
