@@ -106,6 +106,37 @@
                 </div>
             </aside>
 
+            <!-- Advanced Filters Panel - Membre A -->
+            <section class="advanced-filters-panel" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #dee2e6;">
+                <h3>Filtres Avancés</h3>
+                <div class="filter-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                    <div class="form-group">
+                        <label>Mots clés</label>
+                        <input type="text" id="filter-search" placeholder="Rechercher..." class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Priorité</label>
+                        <select id="filter-priority" class="form-control">
+                            <option value="">Toutes</option>
+                            <option value="low">Basse</option>
+                            <option value="medium">Moyenne</option>
+                            <option value="high">Haute</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <select id="filter-date" class="form-control">
+                            <option value="">Indifférent</option>
+                            <option value="today">Aujourd'hui</option>
+                            <option value="overdue">En retard</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-top: 10px;">
+                    <button id="apply-filters-btn" class="btn-primary">Appliquer</button>
+                </div>
+            </section>
+
             <!-- Task List -->
             <section class="task-section">
                 <div class="task-header">
