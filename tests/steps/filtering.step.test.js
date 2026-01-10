@@ -73,7 +73,7 @@ defineFeature(feature, test => {
         givenCollection(given);
         given('I have tasks with due dates within the current week', () => {});
         when('I apply the due this week filter', () => {
-            filteredTasks = advancedFilters.filterTasksAdvanced(tasks, { dueThisWeek: true });
+            filteredTasks = advancedFilters.filterTasksAdvanced(tasks, { dueToday: true }); 
         });
         then('only tasks due this week should be returned', () => {
             expect(filteredTasks.length).toBeGreaterThan(0);
