@@ -32,6 +32,10 @@
       "js/**/*.js",
       "!js/app.js"
     ],
+    "testMatch": [
+      "**/tests/**/*.test.js",
+      "**/tests/**/*.steps.js"
+    ],
     "coverageThreshold": {
       "global": {
         "branches": 70,
