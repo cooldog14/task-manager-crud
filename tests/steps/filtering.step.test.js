@@ -133,10 +133,16 @@ defineFeature(feature, test => {
             });
         });
         then(/^only high priority tasks containing "(.*)" should be returned$/, (query) => {
-            expect(filteredTasks.every(t => t.priority === 'high' && t.title.toLowerCase().includes(query.toLowerCase()))).toBe(true);
+            const q = query.toLowerCase();
+            const allMatch = filteredTasks.every(t => 
+                t.priority === 'high' && 
+                (t.title.toLowerCase().includes(q) || t.description.toLowerCase().includes(q))
+            );
+            expect(allMatch).toBe(true);
+            expect(filteredTasks.length).toBeGreaterThan(0);
         });
     });
-
+    
     test('No filters applied returns all tasks', ({ given, when, then }) => {
         givenCollection(given);
         given('I have a collection of tasks', () => {});
