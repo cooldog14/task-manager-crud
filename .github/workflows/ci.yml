@@ -1,0 +1,144 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+  schedule:
+    - cron: "0 2 * * *" # Nightly
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      # Ensure artifacts are passed to other stages if strictly needed, 
+      # but npm ci is fast enough in subsequent jobs.
+
+  unit_tests:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test:unit
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-unit
+          path: coverage/
+
+  bdd_tests:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test:bdd
+      - name: Upload BDD results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bdd-results
+          path: bdd-results/
+
+  ui_tests:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - run: npm ci
+      - name: Run UI Tests
+        run: npm run test:ui
+      - name: Upload UI Test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-results
+          path: test-results/
+
+  code_quality:
+    needs: unit_tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - run: npm ci
+      - name: Run Coverage and Check Threshold
+        run: |
+          npm run test:coverage
+          COVERAGE=$(npm run test:coverage 2>/dev/null | grep "All files" | tail -1 | awk -F'|' '{print $2}' | tr -d ' ')
+          STATEMENTS=$(echo $COVERAGE | cut -d' ' -f1)
+          echo "Statements Coverage: $STATEMENTS%"
+          
+          # Check if coverage meets requirements (70%)
+          if (( $(echo "$STATEMENTS < 70" | bc -l) )); then
+            echo "WARNING: Statement coverage below 70%"
+            exit 1
+          fi
+
+  deploy_staging:
+    needs: [bdd_tests, ui_tests, code_quality]
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Staging
+        run: |
+          echo "Deploying to Staging Environment..."
+          echo "Staging URL: https://task-manager-staging.example.com"
+          mkdir -p dist/
+          cp -r *.html css/ js/ dist/
+          echo "Deployment package created in dist/"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deploy-staging
+          path: dist/
+
+  deploy_production:
+    needs: [bdd_tests, ui_tests, code_quality]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Production
+        run: |
+          echo "Deploying to Production Environment..."
+          echo "Production URL: https://task-manager.example.com"
+          mkdir -p dist/
+          cp -r *.html css/ js/ dist/
+          echo "Deployment package created in dist/"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deploy-production
+          path: dist/
