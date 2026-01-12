@@ -27,11 +27,13 @@ describe('filters', () => {
       setPriorityFilters: jest.fn(),
       setStatusFilters: jest.fn(),
       clearFilters: jest.fn(),
-      setSorting: jest.fn()
+      setSorting: jest.fn(),
+      getTasks: jest.fn(() => [])
     };
 
     jest.resetModules();
     filters = require('../js/filters');
+    if (filters.init) filters.init();
   });
 
   test('module should be defined', () => {

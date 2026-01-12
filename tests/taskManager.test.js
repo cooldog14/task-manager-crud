@@ -105,6 +105,7 @@ describe('TaskManager', () => {
 
       const ManagerClass = require('../js/taskManager.js').TaskManager;
       const manager = new ManagerClass();
+      manager.init();
 
       expect(mockStorage.getTasks).toHaveBeenCalled();
       expect(manager.tasks).toEqual(mockTasks);

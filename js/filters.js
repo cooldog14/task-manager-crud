@@ -4,8 +4,7 @@
 
 class FiltersManager {
     constructor() {
-        this.bindEvents();
-        this.loadSavedSettings();
+        // Don't bind events in constructor - wait for init() to be called after DOM is ready
     }
 
     // Bind events for search and filters
@@ -211,6 +210,8 @@ class FiltersManager {
 
     // Initialize the filters manager
     init() {
+        this.loadSavedSettings();
+        this.bindEvents(); // Bind events after DOM is ready
         // Update filter counts on initialization
         this.updateFilterCounts();
         this.updateClearFiltersVisibility();
@@ -226,4 +227,12 @@ class FiltersManager {
 const filtersManager = new FiltersManager();
 
 // Export for use in other modules
-window.filtersManager = filtersManager;
+if (typeof window !== 'undefined') {
+  window.filtersManager = filtersManager;
+}
+
+// Export for testing
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = filtersManager;
+  module.exports.FiltersManager = FiltersManager;
+}

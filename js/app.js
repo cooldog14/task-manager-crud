@@ -9,18 +9,41 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function initializeApp() {
     try {
+        console.log('Starting application initialization...');
         // Initialize all managers
-        window.categoryManager.init();
-        window.taskManager.init();
-        window.filtersManager.init();
+        if (window.categoryManager) {
+            console.log('Initializing categoryManager...');
+            window.categoryManager.init();
+        } else {
+            console.error('categoryManager not found on window');
+            throw new Error('categoryManager not found on window');
+        }
+
+        if (window.taskManager) {
+            console.log('Initializing taskManager...');
+            window.taskManager.init();
+        } else {
+            console.error('taskManager not found on window');
+            throw new Error('taskManager not found on window');
+        }
+
+        if (window.filtersManager) {
+            console.log('Initializing filtersManager...');
+            window.filtersManager.init();
+        } else {
+            console.error('filtersManager not found on window');
+            throw new Error('filtersManager not found on window');
+        }
 
         // Set up global event listeners
+        console.log('Setting up global event listeners...');
         setupGlobalEventListeners();
 
         console.log('Task Manager application initialized successfully');
 
     } catch (error) {
-        console.error('Failed to initialize application:', error);
+        console.error('Initialization error details:', error);
+        console.error('Stack trace:', error.stack);
         showInitializationError(error);
     }
 }

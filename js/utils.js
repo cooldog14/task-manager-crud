@@ -159,6 +159,59 @@ function sortTasks(tasks, sortBy) {
     return sortedTasks;
 }
 
+// Form utility functions
+function getFormData(form) {
+    const formData = new FormData(form);
+    const data = {};
+    formData.forEach((value, key) => {
+        data[key] = value;
+    });
+    return data;
+}
+
+function setFormData(form, data) {
+    Object.keys(data).forEach(key => {
+        const input = form.querySelector(`[name="${key}"]`);
+        if (input) {
+            input.value = data[key];
+        }
+    });
+}
+
+function clearForm(form) {
+    form.reset();
+}
+
+// Toast notification function
+function showToast(message, type = 'info', duration = 3000) {
+    const toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+
+    toastContainer.appendChild(toast);
+
+    // Auto-remove after duration
+    setTimeout(() => {
+        toast.classList.add('hide');
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.remove();
+            }
+        }, 300);
+    }, duration);
+}
+
+// Confirm dialog function
+function confirmDialog(message) {
+    return new Promise((resolve) => {
+        const confirmed = window.confirm(message);
+        resolve(confirmed);
+    });
+}
+
 // Export for window/global
 const exported = {
     generateId,
@@ -173,7 +226,12 @@ const exported = {
     priorityToText,
     isValidEmail,
     debounce,
-    sortTasks
+    sortTasks,
+    getFormData,
+    setFormData,
+    clearForm,
+    showToast,
+    confirmDialog
 };
 
 // Export for browser (window) as TaskManagerUtils for compatibility

@@ -5,8 +5,8 @@
 class CategoryManager {
     constructor() {
         this.categories = [];
-        this.loadCategories();
-        this.bindEvents();
+        // Don't loadCategories() in constructor - wait for init() to be called after all dependencies are ready
+        // Don't bind events in constructor - wait for init() to be called after DOM is ready
     }
 
     // Load categories from storage
@@ -303,8 +303,8 @@ class CategoryManager {
     bindCategoryEvents() {
         // Edit category buttons
         document.querySelectorAll('.edit-category-btn').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const categoryId = e.target.dataset.id;
+            button.addEventListener('click', () => {
+                const categoryId = button.dataset.id;
                 const category = this.getCategoryById(categoryId);
                 if (category) {
                     this.showCategoryModal(category);
@@ -314,8 +314,8 @@ class CategoryManager {
 
         // Delete category buttons
         document.querySelectorAll('.delete-category-btn').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const categoryId = e.target.dataset.id;
+            button.addEventListener('click', () => {
+                const categoryId = button.dataset.id;
                 this.handleCategoryDelete(categoryId);
             });
         });
@@ -323,6 +323,8 @@ class CategoryManager {
 
     // Initialize the category manager
     init() {
+        this.loadCategories(); // Load categories after all dependencies are ready
+        this.bindEvents(); // Bind events after DOM is ready
         this.renderCategories();
         this.renderCategoryFilters();
     }
@@ -332,4 +334,12 @@ class CategoryManager {
 const categoryManager = new CategoryManager();
 
 // Export for use in other modules
-window.categoryManager = categoryManager;
+if (typeof window !== 'undefined') {
+  window.categoryManager = categoryManager;
+}
+
+// Export for testing
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = categoryManager;
+  module.exports.CategoryManager = CategoryManager;
+}

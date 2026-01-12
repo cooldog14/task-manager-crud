@@ -4,10 +4,15 @@
 
 let validateTask, filterTasksAdvanced;
 
-if (typeof require !== 'undefined') {
+// Environment detection
+const isBrowser = typeof window !== 'undefined';
+const isNode = !isBrowser && typeof module !== 'undefined' && typeof require !== 'undefined';
+
+if (isNode) {
     validateTask = require('./validators').validateTask;
     filterTasksAdvanced = require('./advancedFilters').filterTasksAdvanced;
 } else {
+    // Browser environment
     validateTask = window.validateTask;
     filterTasksAdvanced = window.filterTasksAdvanced;
 }
@@ -26,8 +31,8 @@ class TaskManager {
             week: false
         };
         this.currentSort = 'created-desc';
-        this.loadTasks();
-        this.bindEvents();
+        // Don't loadTasks() in constructor - wait for init() to be called after all dependencies are ready
+        // Don't bind events in constructor - wait for init() to be called after DOM is ready
     }
 
     // Load tasks from storage
@@ -137,8 +142,15 @@ class TaskManager {
             dueThisWeek: this.currentFilters.week
             // No explicit operator set here, filterTasksAdvanced defaults to 'AND'
         };
-        let filtered = filterTasksAdvanced(this.tasks, advancedFilters);
-        this.filteredTasks = window.TaskManagerUtils.sortTasks(filtered, this.currentSort);
+        // Safety check for filterTasksAdvanced
+        if (typeof filterTasksAdvanced === 'function') {
+            let filtered = filterTasksAdvanced(this.tasks, advancedFilters);
+            this.filteredTasks = window.TaskManagerUtils.sortTasks(filtered, this.currentSort);
+        } else {
+            // Fallback if advanced filters not loaded
+            this.filteredTasks = [...this.tasks];
+        }
+        
         this.renderTasks();
         this.updateTaskCount();
     }
@@ -210,26 +222,34 @@ class TaskManager {
 
     // Render tasks
     renderTasks() {
-        const taskList = document.getElementById('taskList');
-        const noTasks = document.getElementById('noTasks');
+        try {
+            const taskList = document.getElementById('taskList');
+            const noTasks = document.getElementById('noTasks');
 
-        if (!taskList || !noTasks) return;
+            if (!taskList || !noTasks) return;
 
-        taskList.innerHTML = '';
+            taskList.innerHTML = '';
 
-        if (this.filteredTasks.length === 0) {
-            noTasks.style.display = 'block';
-            taskList.style.display = 'none';
-            return;
+            if (this.filteredTasks.length === 0) {
+                noTasks.style.display = 'block';
+                taskList.style.display = 'none';
+                return;
+            }
+
+            noTasks.style.display = 'none';
+            taskList.style.display = 'flex';
+
+            this.filteredTasks.forEach(task => {
+                const taskElement = this.createTaskElement(task);
+                taskList.appendChild(taskElement);
+            });
+
+            // Re-bind events for the new task elements
+            this.bindTaskEvents();
+        } catch (error) {
+            console.error('Error rendering tasks:', error);
+            throw error; // Re-throw to be caught by initializeApp
         }
-
-        noTasks.style.display = 'none';
-        taskList.style.display = 'flex';
-
-        this.filteredTasks.forEach(task => {
-            const taskElement = this.createTaskElement(task);
-            taskList.appendChild(taskElement);
-        });
     }
 
     // Create task element
@@ -346,13 +366,17 @@ class TaskManager {
 
         try {
             // --- ADD VALIDATION HERE ---
-            const validationResult = validateTask(formData);
-            if (!validationResult.isValid) {
-                validationResult.errors.forEach(error => {
-                    window.TaskManagerUtils.showToast(error, 'error');
-                });
-                return; // Stop submission if validation fails
+            let isValid = true;
+            if (typeof validateTask === 'function') {
+                const validationResult = validateTask(formData);
+                if (!validationResult.isValid) {
+                    isValid = false;
+                    validationResult.errors.forEach(error => {
+                        window.TaskManagerUtils.showToast(error, 'error');
+                    });
+                }
             }
+            if (!isValid) return; // Stop submission if validation fails
             // --- END VALIDATION ---
 
             let task;
@@ -439,8 +463,8 @@ class TaskManager {
     bindTaskEvents() {
         // Edit task buttons
         document.querySelectorAll('.edit-task-btn').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const taskId = e.target.dataset.id;
+            button.addEventListener('click', () => {
+                const taskId = button.dataset.id;
                 const task = this.getTaskById(taskId);
                 if (task) {
                     this.showTaskModal(task);
@@ -450,16 +474,16 @@ class TaskManager {
 
         // Delete task buttons
         document.querySelectorAll('.delete-task-btn').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const taskId = e.target.dataset.id;
+            button.addEventListener('click', () => {
+                const taskId = button.dataset.id;
                 this.handleTaskDelete(taskId);
             });
         });
 
         // Toggle status buttons
         document.querySelectorAll('.toggle-status-btn').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const taskId = e.target.dataset.id;
+            button.addEventListener('click', () => {
+                const taskId = button.dataset.id;
                 this.toggleTaskStatus(taskId);
                 window.TaskManagerUtils.showToast('Task status updated', 'success');
             });
@@ -468,22 +492,21 @@ class TaskManager {
 
     // Initialize the task manager
     init() {
+        this.loadTasks(); // Load tasks after all dependencies are ready
+        this.bindEvents(); // Bind events after DOM is ready
         this.renderTasks();
         this.renderCategoryOptions();
         this.updateTaskCount();
     }
 }
 
-// Create global instance
-const taskManager = new TaskManager();
-
-// Export for use in other modules
-if (typeof window !== 'undefined') {
-  window.taskManager = taskManager;
+// Global Assignment
+if (isBrowser) {
+    window.taskManager = new TaskManager();
 }
 
-// Export for testing
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = taskManager;
-  module.exports.TaskManager = TaskManager;
+// Node Export
+if (isNode) {
+    module.exports = new TaskManager();
+    module.exports.TaskManager = TaskManager;
 }

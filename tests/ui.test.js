@@ -27,8 +27,10 @@ describe('Task Manager UI Tests', () => {
 
       const filePath = path.join(__dirname, '..', pathname);
 
+      console.log(`Serving request: ${pathname}`);
       fs.readFile(filePath, (err, data) => {
         if (err) {
+          console.error(`404 Not Found: ${filePath}`);
           res.writeHead(404);
           res.end('File not found');
           return;
@@ -77,6 +79,18 @@ describe('Task Manager UI Tests', () => {
 
   beforeEach(async () => {
     await driver.get('http://localhost:8080');
+    // Check for error overlay
+    try {
+        const errorOverlay = await driver.findElement(By.xpath('//div[contains(@style, "background: #dc3545") or contains(@style, "background: rgb(220, 53, 69)")]'));
+        if (errorOverlay) {
+            const errorText = await errorOverlay.getText();
+            console.error('CRITICAL: Application Initialization Error detected:', errorText);
+            throw new Error('Application Initialization Error: ' + errorText);
+        }
+    } catch (e) {
+        if (e.message.includes('Application Initialization Error')) throw e;
+        // Ignore if element not found
+    }
     // Wait for the page to load
     await driver.wait(until.elementLocated(By.id('addTaskBtn')), 5000);
   });
