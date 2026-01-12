@@ -297,8 +297,7 @@ if (typeof window !== 'undefined') {
 }
 
 // Export for testing
-module.exports = storage;
-// Also export the class for isolated unit testing
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports.TaskManagerStorage = TaskManagerStorage;
+  module.exports = storage;
+  module.exports.TaskManagerStorage = TaskManagerStorage;
 }

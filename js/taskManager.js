@@ -483,8 +483,7 @@ if (typeof window !== 'undefined') {
 }
 
 // Export for testing
-module.exports = taskManager;
-// Also export the class for isolated unit testing
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports.TaskManager = TaskManager;
+  module.exports = taskManager;
+  module.exports.TaskManager = TaskManager;
 }

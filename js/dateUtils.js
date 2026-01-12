@@ -159,11 +159,13 @@ function getStartOfDay(date) {
   return startOfDay;
 }
 
-module.exports = {
-  isOverdue,
-  isDueToday,
-  isDueThisWeek,
-  daysUntilDue,
-  formatDueDate,
-  getDueDateStatus
-};
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    isOverdue,
+    isDueToday,
+    isDueThisWeek,
+    daysUntilDue,
+    formatDueDate,
+    getDueDateStatus
+  };
+}

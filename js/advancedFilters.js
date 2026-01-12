@@ -164,10 +164,12 @@ if (typeof window !== 'undefined') {
   // We can attach others if needed, but filterTasksAdvanced is the main one used by TaskManager
 }
 
-module.exports = {
-  filterTasksAdvanced,
-  matchesAdvancedFilters,
-  isOverdue,
-  isDueToday,
-  isDueThisWeek
-};
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    filterTasksAdvanced,
+    matchesAdvancedFilters,
+    isOverdue,
+    isDueToday,
+    isDueThisWeek
+  };
+}

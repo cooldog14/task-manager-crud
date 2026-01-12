@@ -116,6 +116,8 @@ if (typeof window !== 'undefined') {
   window.validateTask = validateTask;
 }
 
-module.exports = {
-  validateTask
-};
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    validateTask
+  };
+}
